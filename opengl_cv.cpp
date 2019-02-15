@@ -4,6 +4,7 @@
 // adapt the include statements for your system:
 
 #include <opencv2/opencv.hpp>
+
 #include <opencv2/highgui/highgui_c.h>
 
 #ifdef __APPLE__
@@ -14,11 +15,32 @@
 #endif
 
 #include <cstdio>
+#include <fstream>
+using namespace std;
+using namespace cv;
+
+
 
 cv::VideoCapture *cap = NULL;
 int width = 640;
 int height = 480;
+const int chessCornersX = 8;
+const int chessCornersY = 6;
 cv::Mat image;
+
+void buildChessboardCornerPoints(std::vector<Point3f>* corners, float scale)
+{
+  if (corners != nullptr)
+  {
+    for (int ix = 0; ix < chessCornersY; ix++)
+    {
+      for (int iy = 0; iy < chessCornersX; iy++)
+      {
+        corners->push_back(Point3f(iy*scale, ix*scale, 0.0));
+      }
+    }
+  }
+}
 
 // a useful function for displaying your coordinate system
 void drawAxes(float length)
@@ -55,6 +77,7 @@ void display()
 
   //based on the way cv::Mat stores data, you need to flip it before displaying it
   cv::Mat tempimage;
+  cv::Mat grayImage;
   cv::flip(image, tempimage, 0);
   glDrawPixels( tempimage.size().width, tempimage.size().height, GL_BGR, GL_UNSIGNED_BYTE, tempimage.ptr() );
 
@@ -70,9 +93,40 @@ void display()
 
   //gluPerspective is arbitrarily set, you will have to determine these values based
   //on the intrinsic camera parameters
-  gluPerspective(60, tempimage.size().width*1.0/tempimage.size().height, 1, 20); 
+  gluPerspective(49.535321507097954, 1.348276238847116, 0.5, 500);
 
   //you will have to set modelview matrix using extrinsic camera params
+  vector<Point2f> realCorners;      // The corners we found in the real image.
+  vector<Point3f> virtualCorners;       // The corresponding corner positions for where the corners lie on the chess board (measured in virtual units).
+  Size patternSize(8,6);
+  Mat rotation;                       // The calculated rotation of the chess board.
+  Mat translation;                    // The calculated translation of the chess board.
+  int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
+
+  if (image.data){
+    cvtColor(image, grayImage, COLOR_BGR2GRAY);
+      // Try to find the chess board corners in the image.
+  bool foundCorners = findChessboardCorners(grayImage, patternSize, realCorners, chessBoardFlags);
+  buildChessboardCornerPoints(&virtualCorners, 1.0);
+    // Compute the rotation / translation of the chessboard (the cameras extrinsic pramaters).
+
+  const float chessBoardScale = 1.0;
+  float focal_length = 635.5372342324713;
+  float center_x = 345.9518885070029;
+  float center_y = 286.7182067537758;
+  float focal_height = 638.959818122316;
+  cv::Mat camera_matrix = (Mat_<float>(3,3) << focal_length, 0, center_x, 0 , focal_height, center_y, 0, 0, 1);
+  cv::Mat dist_coeffs = (Mat_<float>(5,1) << -0.019971260474681007, 0.4434525041243878, 0.009682201827214744, 0.004195454828454007, -2.2207837789884732);
+  //cout << fprintf(stderr, "%d", Mat(realCorners).checkVector(2, CV_32F));
+  //cout << fprintf(stderr, "%d",Mat(realCorners).checkVector(2, CV_64F));
+  if (foundCorners){
+  solvePnP(Mat(virtualCorners), Mat(realCorners), camera_matrix, dist_coeffs, rotation, translation);
+  }
+  }
+
+  // If we weren’t able to find the corners exit early.
+
+
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0);  
@@ -135,6 +189,28 @@ void idle()
   (*cap) >> image;
 }
 
+
+
+
+//vector<float> readIntrinsicParams(){
+//    ifstream infile;
+//    infile.open("intrinsic_params.txt");
+//    if (!infile) {
+//    cerr << "Unable to open file datafile.txt";
+//    exit(1);   // call system to stop
+//    }
+//    float a, b;
+//    int i = 0;
+//    vector<float> res;
+//    while (infile >> a)
+//    {
+//        res[i] = a;
+//        i++;
+//    }
+//    infile.close();
+//    return res;
+//    }
+
 int main( int argc, char **argv )
 {
   int w,h;
@@ -159,6 +235,10 @@ int main( int argc, char **argv )
   // get width and height
   w = (int) cap->get( cv::CAP_PROP_FRAME_WIDTH );
   h = (int) cap->get( cv::CAP_PROP_FRAME_HEIGHT );
+  fprintf(stderr, "%d", w);
+//  vector<float> res = readIntrinsicParams();
+//  cout << res[0];
+
   // On Linux, there is currently a bug in OpenCV that returns 
   // zero for both width and height here (at least for video from file)
   // hence the following override to global variable defaults: 
