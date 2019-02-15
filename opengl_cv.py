@@ -7,11 +7,13 @@ import cv2 as cv
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
+import numpy as np
 
 import sys
 
-cap = None
-image = None
+
+cap = cv.VideoCapture(0)
+image = 0
 width = 640
 height = 480
 
@@ -42,6 +44,8 @@ def drawAxes(length):
 
 
 def display():
+    global image
+    global cap
 
     # clear the window
     glClear( GL_COLOR_BUFFER_BIT )
@@ -49,9 +53,9 @@ def display():
     # show the current camera frame
 
     #based on the way cv::Mat stores data, you need to flip it before displaying it
-    tempimage = None
+    tempimage = image.clone()
     cv.flip(image, tempimage, 0)
-    glDrawPixels( tempimage.size().width, tempimage.size().height, GL_BGR, GL_UNSIGNED_BYTE, tempimage.ptr() )
+    glDrawPixels( tempimage.size().width, tempimage.size().height, GL_BGR, GL_UNSIGNED_BYTE, tempimage )
 
     #########################################
     # Here, set up new parameters to render a scene viewed from the camera.
@@ -76,7 +80,7 @@ def display():
     ########################################/
     # Drawing routine
 
-    #now that the camera params have been set, draw your 3D shapes
+    #now that the camera params have been  set, draw your 3D shapes
     #first, save the current matrix
     glPushMatrix()
     #move to the position where you want the 3D object to go
@@ -104,7 +108,7 @@ def reshape(w, h):
 
 def mouse(button, state, x, y):
     if (button == GLUT_LEFT_BUTTON and state == GLUT_UP):
-        return
+        pass
 
 
 
@@ -114,18 +118,18 @@ def keyboard(key, x, y ):
 
     if key == 'q':
       # quit when q is pressed
-      exit(0)
+      sys.exit()
 
 
 
 def idle():
-
+    global image
+    global cap
     # grab a frame from the camera
-    cap = image
+    image =  open("checkerboardPhotos/2019-02-08-095838.jpg")
 
 
 def main():
-
     if ( len(sys.argv) == 1 ):
       # start video capture from camera
         cap = cv.VideoCapture(0)
@@ -135,7 +139,6 @@ def main():
     else:
         print( "usage: %s [<filename>]\n", sys.argv[0] )
         return 1
-
 
     # check that video is opened
     if ( cap == None or not cap.isOpened() ):
@@ -153,11 +156,11 @@ def main():
     height = h if h else height
 
     # initialize GLUT
-    glutInit(len(sys.argv), sys.argv )
-    glutInitDisplayMode( GLUT_RGBA or GLUT_DOUBLE )
-    glutInitWindowPosition( 20, 20 )
-    glutInitWindowSize( width, height )
-    glutCreateWindow( "OpenGL / OpenCV Example" )
+    glutInit(sys.argv)
+    glutInitDisplayMode(GLUT_RGBA or GLUT_DOUBLE)
+    glutInitWindowPosition(20, 20)
+    glutInitWindowSize(width, height)
+    glutCreateWindow("OpenGL / OpenCV Example")
 
     # set up GUI callback functions
     glutDisplayFunc(display)
@@ -168,6 +171,8 @@ def main():
 
     # start GUI loop
     glutMainLoop()
+
+
 
     return 0
 
