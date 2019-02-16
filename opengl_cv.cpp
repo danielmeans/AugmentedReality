@@ -68,6 +68,20 @@ void drawAxes(float length)
   glPopAttrib() ;
 }
 
+void drawTeapot()
+{
+glPushAttrib(GL_POLYGON_BIT | GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
+glPushMatrix();
+glColor3f(0.0,1.0,0.0);
+glRotatef(90,0.0, 0.0, 1.0);
+glTranslatef(40.0, 40.0, 0.0);
+glutWireTeapot(1.0);
+glPopMatrix();
+glPopAttrib();
+
+
+}
+
 void display()
 {
   // clear the window
@@ -99,14 +113,17 @@ void display()
   vector<Point2f> realCorners;      // The corners we found in the real image.
   vector<Point3f> virtualCorners;       // The corresponding corner positions for where the corners lie on the chess board (measured in virtual units).
   Size patternSize(8,6);
-  Mat rotation;                       // The calculated rotation of the chess board.
-  Mat translation;                    // The calculated translation of the chess board.
+  Mat r_vec;                       // The calculated rotation of the chess board.
+  Mat t_vec;                    // The calculated translation of the chess board.
+  Mat rotation;
+  Mat viewMatrix = Mat::zeros(4, 4, CV_64FC1);
   int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE;
-
+  bool foundCorners;
+  Mat glViewMatrix = Mat::zeros(4, 4, CV_64FC1);
   if (image.data){
-    cvtColor(image, grayImage, COLOR_BGR2GRAY);
+  cvtColor(image, grayImage, COLOR_BGR2GRAY);
       // Try to find the chess board corners in the image.
-  bool foundCorners = findChessboardCorners(grayImage, patternSize, realCorners, chessBoardFlags);
+  foundCorners = findChessboardCorners(grayImage, patternSize, realCorners, chessBoardFlags);
   buildChessboardCornerPoints(&virtualCorners, 1.0);
     // Compute the rotation / translation of the chessboard (the cameras extrinsic pramaters).
 
@@ -117,10 +134,28 @@ void display()
   float focal_height = 638.959818122316;
   cv::Mat camera_matrix = (Mat_<float>(3,3) << focal_length, 0, center_x, 0 , focal_height, center_y, 0, 0, 1);
   cv::Mat dist_coeffs = (Mat_<float>(5,1) << -0.019971260474681007, 0.4434525041243878, 0.009682201827214744, 0.004195454828454007, -2.2207837789884732);
+  //Mat dist_c = Mat::zeros(5, 1, CV_64FC1);
   //cout << fprintf(stderr, "%d", Mat(realCorners).checkVector(2, CV_32F));
   //cout << fprintf(stderr, "%d",Mat(realCorners).checkVector(2, CV_64F));
   if (foundCorners){
-  solvePnP(Mat(virtualCorners), Mat(realCorners), camera_matrix, dist_coeffs, rotation, translation);
+  solvePnP(Mat(virtualCorners), Mat(realCorners), camera_matrix, dist_coeffs, r_vec, t_vec);
+  Rodrigues(r_vec, rotation);
+
+  for (int row = 0; row < 3; ++row){
+    for (int col = 0; col < 3; ++col) {
+        viewMatrix.at<double>(row, col) = rotation.at<double>(row, col);
+    }
+    viewMatrix.at<double>(row, 3) = t_vec.at<double>(row,0);
+  }
+  viewMatrix.at<double>(3,3) = 1.0f;
+  Mat cvToGl = Mat::zeros(4,4,CV_64F);
+  cvToGl.at<double>(0,0) = 1.0f;
+  cvToGl.at<double>(1,1) = -1.0f;
+  cvToGl.at<double>(2,2) = -1.0f;
+  cvToGl.at<double>(3,3) = 1.0f;
+  viewMatrix = cvToGl * viewMatrix;
+
+  transpose(viewMatrix, glViewMatrix);
   }
   }
 
@@ -128,8 +163,16 @@ void display()
 
 
   glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+
   glLoadIdentity();
-  gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0);  
+
+  gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0);
+
+  if(foundCorners){
+   glLoadMatrixd(&glViewMatrix.at<double>(0,0));
+  }
+  glScalef(1.0, -1.0, -1.0);
 
 
   /////////////////////////////////////////////////////////////////////////////////
@@ -137,14 +180,14 @@ void display()
 
   //now that the camera params have been set, draw your 3D shapes
   //first, save the current matrix
-  glPushMatrix();
     //move to the position where you want the 3D object to go
-    glTranslatef(0, 0, 0); //this is an arbitrary position for demonstration
+      glTranslatef(1.0, 1.0, 0.0); //this is an arbitrary position for demonstration
     //you will need to adjust your transformations to match the positions where
     //you want to draw your objects(i.e. chessboard center, chessboard corners)
-    glutSolidTeapot(0.5);
-    //glutSolidSphere(.3, 100, 100);
     drawAxes(1.0);
+    glutSolidTeapot(0.5);
+    //drawTeapot();
+    //glutSolidSphere(.3, 100, 100);
   glPopMatrix();
   
 
@@ -154,6 +197,8 @@ void display()
   // post the next redisplay
   glutPostRedisplay();
 }
+
+
 
 void reshape( int w, int h )
 {
