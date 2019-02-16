@@ -3,7 +3,6 @@
 #include <string>
 #include <ctime>
 #include <cstdio>
-#include <gtk2>
 #include <opencv2/core.hpp>
 #include <opencv2/core/utility.hpp>
 #include <opencv2/imgproc.hpp>
