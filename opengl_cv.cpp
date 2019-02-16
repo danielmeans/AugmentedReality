@@ -13,7 +13,7 @@
 #include <GL/gl.h>
 #include <GL/glut.h>
 #endif
-
+#include <math.h>
 #include <cstdio>
 #include <fstream>
 using namespace std;
@@ -22,11 +22,23 @@ using namespace cv;
 
 
 cv::VideoCapture *cap = NULL;
+int POT_FLAG = 1;
+int SPHERE_FLAG = 0;
 int width = 640;
 int height = 480;
 const int chessCornersX = 8;
 const int chessCornersY = 6;
-cv::Mat image;
+Mat image;
+Mat camera_matrix;
+Mat dist_coeffs;
+
+void readIntrinsicParams(){
+string fname = "out_camera_data.xml";
+FileStorage fs( fname, FileStorage::READ );
+fs["camera_matrix"] >> camera_matrix;
+fs["distortion_coefficients"] >> dist_coeffs;
+
+}
 
 void buildChessboardCornerPoints(std::vector<Point3f>* corners, float scale)
 {
@@ -72,15 +84,40 @@ void drawTeapot()
 {
 glPushAttrib(GL_POLYGON_BIT | GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
 glPushMatrix();
+glTranslatef(2.0, -3.0, 0.0);
 glColor3f(0.0,1.0,0.0);
-glRotatef(90,0.0, 0.0, 1.0);
-glTranslatef(40.0, 40.0, 0.0);
-glutWireTeapot(1.0);
+glRotatef(90,1.0, 0., 0.);
+glTranslatef(2, 1.5, 0.0);
+
+glutWireTeapot(3.0);
 glPopMatrix();
 glPopAttrib();
 
 
 }
+
+void drawSphere(){
+
+glPushAttrib(GL_POLYGON_BIT | GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
+glPushMatrix();
+glColor3f(0.0, 0.0, 1.0);
+glTranslatef(-1.0, 0.0, 0.0);
+
+for(int i = 0; i < chessCornersY; i++){
+    glPushMatrix();
+    for (int j = 0; j < chessCornersX; j++){
+        glTranslatef(1.0, 0.0, 0.0);
+        glutSolidSphere(0.2, 20, 20);
+    }
+    glPopMatrix();
+
+    glTranslatef(0.0, -1.0, 0.0);
+}
+
+glPopMatrix();
+glPopAttrib();
+}
+
 
 void display()
 {
@@ -107,7 +144,9 @@ void display()
 
   //gluPerspective is arbitrarily set, you will have to determine these values based
   //on the intrinsic camera parameters
-  gluPerspective(49.535321507097954, 1.348276238847116, 0.5, 500);
+  float fovy = 2 *atan(0.5 * height / camera_matrix.at<double>(1,1) ) * 180 / M_PI;
+  float aspect_ratio = width * 1.0 / height;
+  gluPerspective(fovy, aspect_ratio , 0.1, 700);
 
   //you will have to set modelview matrix using extrinsic camera params
   vector<Point2f> realCorners;      // The corners we found in the real image.
@@ -128,17 +167,8 @@ void display()
     // Compute the rotation / translation of the chessboard (the cameras extrinsic pramaters).
 
   const float chessBoardScale = 1.0;
-  float focal_length = 635.5372342324713;
-  float center_x = 345.9518885070029;
-  float center_y = 286.7182067537758;
-  float focal_height = 638.959818122316;
-  cv::Mat camera_matrix = (Mat_<float>(3,3) << focal_length, 0, center_x, 0 , focal_height, center_y, 0, 0, 1);
-  cv::Mat dist_coeffs = (Mat_<float>(5,1) << -0.019971260474681007, 0.4434525041243878, 0.009682201827214744, 0.004195454828454007, -2.2207837789884732);
-  //Mat dist_c = Mat::zeros(5, 1, CV_64FC1);
-  //cout << fprintf(stderr, "%d", Mat(realCorners).checkVector(2, CV_32F));
-  //cout << fprintf(stderr, "%d",Mat(realCorners).checkVector(2, CV_64F));
   if (foundCorners){
-  solvePnP(Mat(virtualCorners), Mat(realCorners), camera_matrix, dist_coeffs, r_vec, t_vec);
+  solvePnP(Mat(virtualCorners), Mat(realCorners), camera_matrix, dist_coeffs, r_vec, t_vec, false);
   Rodrigues(r_vec, rotation);
 
   for (int row = 0; row < 3; ++row){
@@ -167,7 +197,7 @@ void display()
 
   glLoadIdentity();
 
-  gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0);
+  //gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0);
 
   if(foundCorners){
    glLoadMatrixd(&glViewMatrix.at<double>(0,0));
@@ -181,13 +211,16 @@ void display()
   //now that the camera params have been set, draw your 3D shapes
   //first, save the current matrix
     //move to the position where you want the 3D object to go
-      glTranslatef(1.0, 1.0, 0.0); //this is an arbitrary position for demonstration
+    //glTranslatef(1.0, 1.0, 0.0); //this is an arbitrary position for demonstration
     //you will need to adjust your transformations to match the positions where
     //you want to draw your objects(i.e. chessboard center, chessboard corners)
-    drawAxes(1.0);
-    glutSolidTeapot(0.5);
-    //drawTeapot();
-    //glutSolidSphere(.3, 100, 100);
+    //drawAxes(1.0);
+    if(POT_FLAG){
+      drawTeapot();
+    }
+    if (SPHERE_FLAG){
+      drawSphere();
+    }
   glPopMatrix();
   
 
@@ -222,7 +255,10 @@ void keyboard( unsigned char key, int x, int y )
       // quit when q is pressed
       exit(0);
       break;
-
+    case ' ':
+      SPHERE_FLAG = (SPHERE_FLAG + 1) % 2;
+      POT_FLAG = (POT_FLAG + 1) % 2;
+      break;
     default:
       break;
     }
@@ -289,6 +325,7 @@ int main( int argc, char **argv )
   // hence the following override to global variable defaults: 
   width = w ? w : width;
   height = h ? h : height;
+  readIntrinsicParams();
 
   // initialize GLUT
   glutInit( &argc, argv );
