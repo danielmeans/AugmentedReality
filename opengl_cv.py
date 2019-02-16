@@ -7,8 +7,7 @@ import cv2 as cv
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import numpy as np
-
+import Pillow
 import sys
 
 
@@ -126,7 +125,7 @@ def idle():
     global image
     global cap
     # grab a frame from the camera
-    image =  open("checkerboardPhotos/2019-02-08-095838.jpg")
+    image =  Pillow.open("checkerboardPhotos/2019-02-08-095838.jpg")
 
 
 def main():
@@ -135,7 +134,7 @@ def main():
         cap = cv.VideoCapture(0)
     elif ( len(sys.argv) == 2 ):
       # start video capture from file
-        cap = cv.VideoCapture(argv[1])
+        cap = cv.VideoCapture(sys.argv[1])
     else:
         print( "usage: %s [<filename>]\n", sys.argv[0] )
         return 1
