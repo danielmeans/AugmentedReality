@@ -1,7 +1,7 @@
 import numpy as np
 import cv2 as cv
 import glob
-
+import math
 
 def calibrate():
     image_directories = ['checkerboardFromVideo/*.jpg', 'checkerboardPhotos/*.jpg']
@@ -46,26 +46,40 @@ def calibrate():
         horiz_field_of_view = 2 * np.arctan(w / (2 * mtx[0][0]))
         vert_field_of_view = 2 * np.arctan(h / (2 * mtx[1][1]))
 
+        # Change to False to True when needing to write to the Readme file
+        if(False):
+            #store parameters to be saved into an array
+            parameter_array = ["Horizontal FoV: " + str(horiz_field_of_view) + '\n']
+            parameter_array.append("Vertical FoV: " + str(vert_field_of_view) + '\n')
+            parameter_array.append('fx: ' + str(mtx[0][0]) + '\n')
+            parameter_array.append('fy: ' + str(mtx[1][1]) + '\n')
+            parameter_array.append('cx: ' + str(mtx[0][2]) + '\n')
+            parameter_array.append('cy: ' + str(mtx[1][2]) + '\n')
+            parameter_array.append('k1: ' + str(dist[0][0]) + '\n')
+            parameter_array.append('k2: ' + str(dist[0][1]) + '\n')
+            parameter_array.append('k3: ' + str(dist[0][2]) + '\n')
+            parameter_array.append('p1: ' + str(dist[0][3]) + '\n')
+            parameter_array.append('p2: ' + str(dist[0][4]) + '\n')
 
-        #store parameters to be saved into an array
-        parameter_array = ["Horizontal FoV: " + str(horiz_field_of_view) + '\n']
-        parameter_array.append("Vertical FoV: " + str(vert_field_of_view) + '\n')
-        parameter_array.append('fx: ' + str(mtx[0][0]) + '\n')
-        parameter_array.append('fy: ' + str(mtx[1][1]) + '\n')
-        parameter_array.append('cx: ' + str(mtx[0][2]) + '\n')
-        parameter_array.append('cy: ' + str(mtx[1][2]) + '\n')
-        parameter_array.append('k1: ' + str(dist[0][0]) + '\n')
-        parameter_array.append('k2: ' + str(dist[0][1]) + '\n')
-        parameter_array.append('k3: ' + str(dist[0][2]) + '\n')
-        parameter_array.append('p1: ' + str(dist[0][3]) + '\n')
-        parameter_array.append('p2: ' + str(dist[0][4]) + '\n')
+
+
+            #write parameters to a file
+            with open('intrinsic_params.txt', 'a+') as file:
+                for param in parameter_array:
+                    file.write(param)
+        # store parameters to be saved into an array
+
+        fy = mtx[0][0]
+        fx = mtx[1][1]
+        fovy = 2 * np.arctan(0.5 * h / fy) * 180 / math.pi
+        aspect = (w * fy) / (h * fx)
+
+        # write parameters to a file
+        with open('intrinsic_params.txt', 'w+') as file:
+            file.write(str(fovy) + '\n' + str(aspect) + '\n')
 
 
 
-        #write parameters to a file
-        with open('README.txt', 'a') as file:
-            for param in parameter_array:
-                file.write(param)
 
         mean_error = 0
         total_error = 0
@@ -77,3 +91,8 @@ def calibrate():
         print( "mean error: {}".format(mean_error/len(objpoints)) )
         print( "total error: {}".format(total_error/len(objpoints)) )
         return mtx, rvecs
+
+def main():
+    calibrate()
+
+main()
