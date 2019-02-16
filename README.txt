@@ -3,118 +3,70 @@ Augmented and Mixed Reality
 CS291A
 2/7/19
 
-Given photos parameters:
+To run, first build the executables:
 
-Horizontal FoV: 1.1030036663915794
-Vertical FoV: 0.8730641607528232
-fx: 520.1784633878241
-fy: 514.4133407743518
-cx: 408.0818731040954
-cy: 231.85923204893245
-k1: 0.028566501913139457
-k2: 0.002221517506789699
-k3: -0.0013725055551211081
-p1: 0.006616272530081681
-p2: -0.01843720254981492
+1. Cmake .
+2. make
+
+To calibrate the camera based on the images provided with the
+assignment enter "./calibrate" into the terminal. The output will
+be "out_camera_data.xml" which is an xml file containing the
+intrinsic parameters among other parameters.
+
+To render the teapot/spheres atop of a chessboard using a webcam,
+simply enter "./opengl_cv". Note that pressing the space key will
+alternate from rendering the teapot and the spheres.
+
+To use a video file as input, simply enter "./opengl_cv 'path/to/file'"
+into the terminal. This should render the teapot/spheres onto the
+video.
+
+Sources used:
+OpenCV Camera Calibration Tutorial
+https://docs.opencv.org/4.0.1/d4/d94/tutorial_camera_calibration.html
+
+OpenCV Forum on using SolvePnP
+http://answers.opencv.org/question/23089/opencv-opengl-proper-camera-pose-using-solvepnp/
+
+
+Given photos parameters:
+Horizontal FoV: 59.9635858 rad
+Vertical FoV: 46.7957864 rad
+fx: 5.5466323243805505e+02
+fy: 5.5466323243805505e+02
+cx: 320
+cy: 240
+k1: -1.1347765800470654e-01
+k2: 4.1286389924913480e-01
+k3: 0
+p1: 0
+p2: -8.0739418237930738e-01
+
 
 My Photos parameters:
 
-Horizontal FoV: 0.9329049542555595
-Vertical FoV: 0.7186115453925072
-fx: 635.5372342324713
-fy: 638.959818122316
-cx: 345.9518885070029
-cy: 286.7182067537758
-k1: -0.019971260474681007
-k2: 0.4434525041243878
-k3: 0.009682201827214744
-p1: 0.004195454828454007
-p2: -2.2207837789884732
+Horizontal FoV: 50.503761 rad
+Vertical FoV: 38.9627777 rad
+fx: 6.7843937002454550e+02
+fy: 6.7843937002454550e+02
+cx: 320
+cy: 240
+k1: 1.1411086307264973e-01
+k2: -1.0839201193011372e+00
+k3: 0
+p1: 0
+p2: 2.4426064298877277e+00
 
 
 Given photos errors:
-mean error: 0.09354297514135788
-total error: 4.490062806785177
+Re-projection error: 1.25992
+avg re projection error: 1.25992
+
 
 My photos errors:
-mean error: 0.11527555372059223
-total error: 5.533226578588427
+Re-projection error: 0.942798
+ avg re projection error: 0.942798
 
-My camera seems to have a a smaller field of view, both measured horizontally and vertically, compared to the camera used in the given photos. My camera also has higher error than the camera in the given photos. 
-Horizontal FoV: 1.1030036631687794
-Vertical FoV: 0.8730641577593478
-fx: 520.1784652660399
-fy: 514.4133427838538
-cx: 408.0818888206419
-cy: 231.8592312943237
-k1: 0.028566614518722305
-k2: 0.0022210961402859136
-k3: -0.0013725112892414631
-p1: 0.006616274200487447
-p2: -0.01843670539684113
-Horizontal FoV: 0.9329049744359513
-Vertical FoV: 0.7186115647906137
-fx: 635.5372182676509
-fy: 638.9597992952558
-cx: 345.9519055568109
-cy: 286.7182135032543
-k1: -0.019971246399798605
-k2: 0.4434523647105472
-k3: 0.00968220904066341
-p1: 0.004195463596948232
-p2: -2.220783603962566
-Horizontal FoV: 1.1030036631687794
-Vertical FoV: 0.8730641577593478
-fx: 520.1784652660399
-fy: 514.4133427838538
-cx: 408.0818888206419
-cy: 231.8592312943237
-k1: 0.028566614518722305
-k2: 0.0022210961402859136
-k3: -0.0013725112892414631
-p1: 0.006616274200487447
-p2: -0.01843670539684113
-Horizontal FoV: 0.9329049744359513
-Vertical FoV: 0.7186115647906137
-fx: 635.5372182676509
-fy: 638.9597992952558
-cx: 345.9519055568109
-cy: 286.7182135032543
-k1: -0.019971246399798605
-k2: 0.4434523647105472
-k3: 0.00968220904066341
-p1: 0.004195463596948232
-p2: -2.220783603962566
-Horizontal FoV: 1.1030036631687794
-Vertical FoV: 0.8730641577593478
-fx: 520.1784652660399
-fy: 514.4133427838538
-cx: 408.0818888206419
-cy: 231.8592312943237
-k1: 0.028566614518722305
-k2: 0.0022210961402859136
-k3: -0.0013725112892414631
-p1: 0.006616274200487447
-p2: -0.01843670539684113
-Horizontal FoV: 1.1030036631687794
-Vertical FoV: 0.8730641577593478
-fx: 520.1784652660399
-fy: 514.4133427838538
-cx: 408.0818888206419
-cy: 231.8592312943237
-k1: 0.028566614518722305
-k2: 0.0022210961402859136
-k3: -0.0013725112892414631
-p1: 0.006616274200487447
-p2: -0.01843670539684113
-Horizontal FoV: 1.1030036631687794
-Vertical FoV: 0.8730641577593478
-fx: 520.1784652660399
-fy: 514.4133427838538
-cx: 408.0818888206419
-cy: 231.8592312943237
-k1: 0.028566614518722305
-k2: 0.0022210961402859136
-k3: -0.0013725112892414631
-p1: 0.006616274200487447
-p2: -0.01843670539684113
+
+My camera seems to have a a smaller field of view, both measured horizontally and vertically, compared to the camera used in the given photos. My camera has less error than the camera in the given photos.
+The larger field of view of the other camera might add some distortion and reprojection error.  
